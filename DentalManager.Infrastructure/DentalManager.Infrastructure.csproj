@@ -19,12 +19,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ExternalServices\" />
+    <ProjectReference Include="..\DentalManager.Application\DentalManager.Application.csproj" />
+    <ProjectReference Include="..\DentalManager.Domain\DentalManager.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DentalManager.Application\DentalManager.Application.csproj" />
-    <ProjectReference Include="..\DentalManager.Domain\DentalManager.Domain.csproj" />
+    <Folder Include="ExternalServices\" />
   </ItemGroup>
 
 </Project>

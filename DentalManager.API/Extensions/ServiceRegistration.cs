@@ -1,6 +1,6 @@
 ﻿using DentalManager.Application.Interfaces;
 using DentalManager.Core.Services;
-using DentalManager.Application.Interfaces;
+
 
 namespace DentalManager.API.Extensions;
 

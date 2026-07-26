@@ -10,6 +10,9 @@ namespace DentalManager.Application.Interfaces
     public interface IAuthService
     {
         Task<LoginResponseDto> LoginAsync(LoginDto dto);
-        Task RegisterAsync(RegisterDto dto);
+        Task ChangePasswordAsync(string userId, string oldPassword, string newPassword);
+        Task SendPasswordResetCodeAsync(string phoneNumber);
+        Task ResetPasswordAsync(string phoneNumber, string code, string newPassword);
+
     }
 }
