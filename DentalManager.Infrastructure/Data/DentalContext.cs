@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using DentalManager.Domain.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace DentalManager.Infrastructure.Data;
 
-public partial class DentalContext : DbContext
+public partial class DentalContext : IdentityDbContext<ApplicationUser>
 {
     public DentalContext()
     {
@@ -16,19 +17,19 @@ public partial class DentalContext : DbContext
     {
     }
 
-    public virtual DbSet<AggregatedCounter> AggregatedCounters { get; set; }
 
-    public virtual DbSet<AspNetRole> AspNetRoles { get; set; }
 
-    public virtual DbSet<AspNetRoleClaim> AspNetRoleClaims { get; set; }
+    public virtual DbSet<ApplicationRole> AppRoles { get; set; }
 
-    public virtual DbSet<AspNetUser> AspNetUsers { get; set; }
+    public virtual DbSet<ApplicationRoleClaim> AppRoleClaims { get; set; }
 
-    public virtual DbSet<AspNetUserClaim> AspNetUserClaims { get; set; }
+    public virtual DbSet<ApplicationUser> AppUsers { get; set; }
 
-    public virtual DbSet<AspNetUserLogin> AspNetUserLogins { get; set; }
+    public virtual DbSet<ApplicationUserClaim> AppUserClaims { get; set; }
 
-    public virtual DbSet<AspNetUserToken> AspNetUserTokens { get; set; }
+    public virtual DbSet<ApplicationUserLogin> AppUserLogins { get; set; }
+
+    public virtual DbSet<ApplicationUserToken> AppUserTokens { get; set; }
 
     public virtual DbSet<BankAccountStaff> BankAccountStaffs { get; set; }
 
@@ -177,19 +178,8 @@ public partial class DentalContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<AggregatedCounter>(entity =>
-        {
-            entity.HasKey(e => e.Key).HasName("PK_HangFire_CounterAggregated");
 
-            entity.ToTable("AggregatedCounter", "HangFire");
-
-            entity.HasIndex(e => e.ExpireAt, "IX_HangFire_AggregatedCounter_ExpireAt").HasFilter("([ExpireAt] IS NOT NULL)");
-
-            entity.Property(e => e.Key).HasMaxLength(100);
-            entity.Property(e => e.ExpireAt).HasColumnType("datetime");
-        });
-
-        modelBuilder.Entity<AspNetRole>(entity =>
+        modelBuilder.Entity<ApplicationRole>(entity =>
         {
             entity.HasIndex(e => e.Name, "IX_AspNetRoles_Name")
                 .IsUnique()
@@ -203,24 +193,24 @@ public partial class DentalContext : DbContext
             entity.Property(e => e.NormalizedName).HasMaxLength(256);
         });
 
-        modelBuilder.Entity<AspNetRoleClaim>(entity =>
+        modelBuilder.Entity<ApplicationRoleClaim>(entity =>
         {
             entity.HasIndex(e => e.RoleId, "IX_AspNetRoleClaims_RoleId");
 
             entity.HasOne(d => d.Role).WithMany(p => p.AspNetRoleClaims).HasForeignKey(d => d.RoleId);
         });
 
-        modelBuilder.Entity<AspNetUser>(entity =>
+        modelBuilder.Entity<ApplicationUser>(entity =>
         {
             entity.HasIndex(e => e.NormalizedEmail, "EmailIndex");
 
-            entity.HasIndex(e => e.Email, "IX_AspNetUsers_Email")
+            entity.HasIndex(e => e.Email, "IX_ApplicationUsers_Email")
                 .IsUnique()
                 .HasFilter("([Email] IS NOT NULL)");
 
-            entity.HasIndex(e => e.OfficeId, "IX_AspNetUsers_OfficeId");
+            entity.HasIndex(e => e.OfficeId, "IX_ApplicationUsers_OfficeId");
 
-            entity.HasIndex(e => e.UserName, "IX_AspNetUsers_UserName")
+            entity.HasIndex(e => e.UserName, "IX_ApplicationUsers_UserName")
                 .IsUnique()
                 .HasFilter("([UserName] IS NOT NULL)");
 
@@ -239,44 +229,44 @@ public partial class DentalContext : DbContext
             entity.Property(e => e.SendSms).HasColumnName("SendSMS");
             entity.Property(e => e.UserName).HasMaxLength(256);
 
-            entity.HasOne(d => d.Office).WithMany(p => p.AspNetUsers).HasForeignKey(d => d.OfficeId);
+            entity.HasOne(d => d.Office).WithMany(p => p.ApplicationUsers).HasForeignKey(d => d.OfficeId);
 
             entity.HasMany(d => d.Roles).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(
-                    "AspNetUserRole",
-                    r => r.HasOne<AspNetRole>().WithMany()
+                    "ApplicationUserRole",
+                    r => r.HasOne<ApplicationRole>().WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.ClientSetNull),
-                    l => l.HasOne<AspNetUser>().WithMany().HasForeignKey("UserId"),
+                    l => l.HasOne<ApplicationUser>().WithMany().HasForeignKey("UserId"),
                     j =>
                     {
                         j.HasKey("UserId", "RoleId");
-                        j.ToTable("AspNetUserRoles");
-                        j.HasIndex(new[] { "RoleId" }, "IX_AspNetUserRoles_RoleId");
+                        j.ToTable("ApplicationUserRoles");
+                        j.HasIndex(new[] { "RoleId" }, "IX_ApplicationUserRoles_RoleId");
                     });
         });
 
-        modelBuilder.Entity<AspNetUserClaim>(entity =>
+        modelBuilder.Entity<ApplicationUserClaim>(entity =>
         {
-            entity.HasIndex(e => e.UserId, "IX_AspNetUserClaims_UserId");
+            entity.HasIndex(e => e.UserId, "IX_ApplicationUserClaims_UserId");
 
-            entity.HasOne(d => d.User).WithMany(p => p.AspNetUserClaims).HasForeignKey(d => d.UserId);
+            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserClaims).HasForeignKey(d => d.UserId);
         });
 
-        modelBuilder.Entity<AspNetUserLogin>(entity =>
+        modelBuilder.Entity<ApplicationUserLogin>(entity =>
         {
             entity.HasKey(e => new { e.LoginProvider, e.ProviderKey });
 
-            entity.HasIndex(e => e.UserId, "IX_AspNetUserLogins_UserId");
+            entity.HasIndex(e => e.UserId, "IX_ApplicationUserLogins_UserId");
 
-            entity.HasOne(d => d.User).WithMany(p => p.AspNetUserLogins).HasForeignKey(d => d.UserId);
+            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserLogins).HasForeignKey(d => d.UserId);
         });
 
-        modelBuilder.Entity<AspNetUserToken>(entity =>
+        modelBuilder.Entity<ApplicationUserToken>(entity =>
         {
             entity.HasKey(e => new { e.UserId, e.LoginProvider, e.Name });
 
-            entity.HasOne(d => d.User).WithMany(p => p.AspNetUserTokens).HasForeignKey(d => d.UserId);
+            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserTokens).HasForeignKey(d => d.UserId);
         });
 
         modelBuilder.Entity<BankAccountStaff>(entity =>

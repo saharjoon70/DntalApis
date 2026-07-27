@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace DentalManager.Domain.Entities;
 
-public partial class AspNetUserLogin
+public partial class ApplicationUserLogin
 {
     public string LoginProvider { get; set; } = null!;
 
@@ -13,5 +13,5 @@ public partial class AspNetUserLogin
 
     public string UserId { get; set; } = null!;
 
-    public virtual AspNetUser User { get; set; } = null!;
+    public virtual ApplicationUser User { get; set; } = null!;
 }

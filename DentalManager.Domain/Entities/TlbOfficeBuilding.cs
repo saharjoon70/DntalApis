@@ -25,7 +25,7 @@ public partial class TlbOfficeBuilding
 
     public int Plan { get; set; }
 
-    public virtual ICollection<AspNetUser> AspNetUsers { get; set; } = new List<AspNetUser>();
+    public virtual ICollection<ApplicationUser> ApplicationUsers { get; set; } = new List<ApplicationUser>();
 
     public virtual TlbOfficePlan PlanNavigation { get; set; } = null!;
 

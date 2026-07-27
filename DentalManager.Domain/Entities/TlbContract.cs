@@ -49,5 +49,5 @@ public partial class TlbContract
 
     public virtual ICollection<EmployeeBenefit> EmployeeBenefits { get; set; } = new List<EmployeeBenefit>();
 
-    public virtual AspNetUser Person { get; set; } = null!;
+    public virtual ApplicationUser Person { get; set; } = null!;
 }

@@ -31,7 +31,7 @@ public partial class Payroll
 
     public short State { get; set; }
 
-    public virtual AspNetUser? Employee { get; set; }
+    public virtual ApplicationUser? Employee { get; set; }
 
     public virtual ICollection<PayrollItem> PayrollItems { get; set; } = new List<PayrollItem>();
 

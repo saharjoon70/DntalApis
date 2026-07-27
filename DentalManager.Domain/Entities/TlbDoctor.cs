@@ -33,5 +33,5 @@ public partial class TlbDoctor
 
     public virtual ICollection<TlbService> TlbServices { get; set; } = new List<TlbService>();
 
-    public virtual AspNetUser? User { get; set; }
+    public virtual ApplicationUser? User { get; set; }
 }

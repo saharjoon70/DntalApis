@@ -13,5 +13,5 @@ public partial class TlbOfficeAdmin
 
     public DateTime RegisterDate { get; set; }
 
-    public virtual AspNetUser? User { get; set; }
+    public virtual ApplicationUser? User { get; set; }
 }

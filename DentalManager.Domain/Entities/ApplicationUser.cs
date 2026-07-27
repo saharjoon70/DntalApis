@@ -1,15 +1,17 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Identity;
+using System;
 using System.Collections.Generic;
 
 namespace DentalManager.Domain.Entities;
 
-public partial class AspNetUser
+public partial class ApplicationUser : IdentityUser
 {
     public string Id { get; set; } = null!;
 
     public DateTime? LatestActivity { get; set; }
 
     public DateTime? PasswordChangeDate { get; set; }
+    public bool? IsActive { get; set; }
 
     public long? EmpIdCode { get; set; }
 
@@ -75,11 +77,11 @@ public partial class AspNetUser
 
     public int AccessFailedCount { get; set; }
 
-    public virtual ICollection<AspNetUserClaim> AspNetUserClaims { get; set; } = new List<AspNetUserClaim>();
+    public virtual ICollection<ApplicationUserClaim> ApplicationUserClaims { get; set; } = new List<ApplicationUserClaim>();
 
-    public virtual ICollection<AspNetUserLogin> AspNetUserLogins { get; set; } = new List<AspNetUserLogin>();
+    public virtual ICollection<ApplicationUserLogin> ApplicationUserLogins { get; set; } = new List<ApplicationUserLogin>();
 
-    public virtual ICollection<AspNetUserToken> AspNetUserTokens { get; set; } = new List<AspNetUserToken>();
+    public virtual ICollection<ApplicationUserToken> ApplicationUserTokens { get; set; } = new List<ApplicationUserToken>();
 
     public virtual ICollection<BankAccountStaff> BankAccountStaffs { get; set; } = new List<BankAccountStaff>();
 
@@ -95,5 +97,5 @@ public partial class AspNetUser
 
     public virtual TlbOfficeAdmin? TlbOfficeAdmin { get; set; }
 
-    public virtual ICollection<AspNetRole> Roles { get; set; } = new List<AspNetRole>();
+    public virtual ICollection<ApplicationRole> Roles { get; set; } = new List<ApplicationRole>();
 }

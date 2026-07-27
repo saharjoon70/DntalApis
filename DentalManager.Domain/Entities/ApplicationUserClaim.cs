@@ -3,15 +3,15 @@ using System.Collections.Generic;
 
 namespace DentalManager.Domain.Entities;
 
-public partial class AspNetRoleClaim
+public partial class ApplicationUserClaim
 {
     public int Id { get; set; }
 
-    public string RoleId { get; set; } = null!;
+    public string UserId { get; set; } = null!;
 
     public string? ClaimType { get; set; }
 
     public string? ClaimValue { get; set; }
 
-    public virtual AspNetRole Role { get; set; } = null!;
+    public virtual ApplicationUser User { get; set; } = null!;
 }

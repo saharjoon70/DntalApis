@@ -12,13 +12,13 @@ namespace DentalManager.Core.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly UserManager<AspNetUser> _userManager;
-    private readonly SignInManager<AspNetUser> _signInManager;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IConfiguration _configuration;
 
     public AuthService(
-        UserManager<AspNetUser> userManager,
-        SignInManager<AspNetUser> signInManager,
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
         IConfiguration configuration)
     {
         _userManager = userManager;
@@ -109,7 +109,7 @@ public class AuthService : IAuthService
         }
     }
 
-    private async Task<string> GenerateJwtToken(AspNetUser user, string role)
+    private async Task<string> GenerateJwtToken(ApplicationUser user, string role)
     {
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));

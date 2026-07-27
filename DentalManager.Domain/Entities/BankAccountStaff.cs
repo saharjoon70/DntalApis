@@ -23,5 +23,5 @@ public partial class BankAccountStaff
 
     public virtual TlbBank Bank { get; set; } = null!;
 
-    public virtual AspNetUser Staff { get; set; } = null!;
+    public virtual ApplicationUser Staff { get; set; } = null!;
 }
