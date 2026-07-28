@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DentalManager.Application\DentalManager.Application.csproj" />
     <ProjectReference Include="..\DentalManager.Domain\DentalManager.Domain.csproj" />
+    <ProjectReference Include="..\DentalManager.Infrastructure\DentalManager.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

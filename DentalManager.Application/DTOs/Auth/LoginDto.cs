@@ -10,5 +10,8 @@ namespace DentalManager.Application.DTOs.Auth
     {
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        public bool RememberMe { get; set; } = false;
+        public string? CaptchaId { get; set; }        // ← این
+        public string? CaptchaCode { get; set; }      // ← کدی که کاربر وارد میکنه
     }
 }

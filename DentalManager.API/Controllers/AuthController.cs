@@ -24,9 +24,16 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<LoginResponseDto>> Login(LoginDto dto)
     {
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+        var userAgent = Request.Headers["User-Agent"].ToString();
+
         try
         {
-            var result = await _authService.LoginAsync(dto);
+            var result = await _authService.LoginAsync(dto, ipAddress, userAgent);
+
+            if (result.RequiresCaptcha)
+                return Ok(new { requiresCaptcha = true, message = "لطفاً کد امنیتی را وارد کنید" });
+
             return Ok(result);
         }
         catch (UnauthorizedAccessException ex)
@@ -112,4 +119,28 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        await _authService.RevokeRefreshTokenAsync(userId!);
+        return Ok(new { message = "با موفقیت خارج شدید" });
+    }
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    public async Task<ActionResult<LoginResponseDto>> Refresh(RefreshTokenDto dto)
+    {
+        try
+        {
+            var result = await _authService.RefreshTokenAsync(dto.AccessToken, dto.RefreshToken); // ← اینجا
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
+
+
 }

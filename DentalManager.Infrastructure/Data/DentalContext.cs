@@ -48,6 +48,8 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
     public virtual DbSet<JobQueue> JobQueues { get; set; }
 
     public virtual DbSet<List> Lists { get; set; }
+    public virtual DbSet<TlbRefreshToken> TlbRefreshTokens { get; set; }
+    public virtual DbSet<TlbLoginLog> TlbLoginLogs { get; set; }
 
     public virtual DbSet<Payroll> Payrolls { get; set; }
 
@@ -1147,7 +1149,49 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(d => d.FundId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
+        // ========== TlbRefreshTokens ==========
+        modelBuilder.Entity<TlbRefreshToken>(entity =>
+        {
+            entity.ToTable("TlbRefreshTokens");
+            entity.HasKey(e => e.Id);
 
+            entity.Property(e => e.Token).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(e => e.ExpiresAt).IsRequired();
+            entity.Property(e => e.IsRevoked).HasDefaultValue(false);
+            entity.Property(e => e.ReplacedByToken).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.RefreshTokens)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.Token);
+            entity.HasIndex(e => e.UserId);
+        });
+
+        // ========== TlbLoginLogs ==========
+        modelBuilder.Entity<TlbLoginLog>(entity =>
+        {
+            entity.ToTable("TlbLoginLogs");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(e => e.IpAddress).HasMaxLength(50);
+            entity.Property(e => e.UserAgent).HasMaxLength(500);
+            entity.Property(e => e.FailReason).HasMaxLength(200);
+            entity.Property(e => e.IsSuccess).IsRequired();
+            entity.Property(e => e.Timestamp).HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.LoginLogs)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.Timestamp);
+        });
         OnModelCreatingPartial(modelBuilder);
     }
 

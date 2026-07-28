@@ -1,8 +1,10 @@
-using DentalManager.API.Extensions;
+﻿using DentalManager.API.Extensions;
 using DentalManager.Domain.Entities;
 using DentalManager.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,13 +27,22 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 // ========== Services ==========
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("login", config =>
+    {
+        config.PermitLimit = 5; // ۵ درخواست
+        config.Window = TimeSpan.FromMinutes(1); // در هر ۱ دقیقه
+        config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+});
 builder.Services.AddApplicationServices();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerWithJwt();
 builder.Services.AddJwtAuthentication(builder.Configuration);
-
+builder.Services.AddMemoryCache();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
