@@ -55,7 +55,14 @@ public class AuthService : IAuthService
         {
             if (string.IsNullOrEmpty(dto.CaptchaId) || !ValidateCaptcha(dto.CaptchaId, dto.CaptchaCode))
             {
-                return new LoginResponseDto { RequiresCaptcha = true };
+                var newCaptchaId = GenerateCaptcha();
+                var captchaCode = GetCaptchaCode(newCaptchaId);
+                return new LoginResponseDto
+                {
+                    RequiresCaptcha = true,
+                    CaptchaId = newCaptchaId,
+                    CaptchaCode = captchaCode
+                };
             }
         }
 
@@ -84,7 +91,7 @@ public class AuthService : IAuthService
         {
             AccessToken = accessToken.Token,
             RefreshToken = refreshToken,
-            FullName = user.FullName ?? "",
+            FullName = user.FirstName ?? "" + " " + user.LastName ?? "",
             Role = role,
             AccessTokenExpiresAt = accessToken.ExpiresAt,
             RefreshTokenExpiresAt = dto.RememberMe ? DateTime.UtcNow.AddDays(30) : DateTime.UtcNow.AddDays(7)
@@ -128,7 +135,7 @@ public class AuthService : IAuthService
         {
             AccessToken = newAccessToken.Token,
             RefreshToken = newRefreshToken,
-            FullName = user.FullName ?? "",
+            FullName = user.FirstName ?? "" + " "+ user.LastName?? "",
             Role = role,
             AccessTokenExpiresAt = newAccessToken.ExpiresAt,
             RefreshTokenExpiresAt = refreshExpire
@@ -204,11 +211,11 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Name, user.UserName ?? ""),
             new Claim(ClaimTypes.Role, role),
-            new Claim("FullName", user.FullName ?? "")
+            new Claim("FullName", user.FirstName ?? "" + " " + user.LastName?? "")
         };
 
-        var expireHours = rememberMe ? 168 : 24;
-        var expiresAt = DateTime.UtcNow.AddHours(expireHours);
+        var expireHours = rememberMe ? 120 : 15;
+        var expiresAt = DateTime.UtcNow.AddMinutes(expireHours);
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],
@@ -248,9 +255,10 @@ public class AuthService : IAuthService
 
     private async Task LogLogin(string? userId, string ipAddress, string userAgent, bool isSuccess, string? failReason)
     {
+        if (userId == null) return;
         _context.TlbLoginLogs.Add(new TlbLoginLog
         {
-            UserId = userId ?? "Unknown",
+            UserId = userId,
             IpAddress = ipAddress,
             UserAgent = userAgent,
             IsSuccess = isSuccess,

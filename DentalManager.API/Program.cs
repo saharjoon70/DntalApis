@@ -10,13 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ========== Database ==========
 builder.Services.AddDbContext<DentalContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")));
 
 // ========== Identity ==========
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.Lockout.AllowedForNewUsers = true;
-    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.MaxFailedAccessAttempts = 10;
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = false;
@@ -43,6 +43,20 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerWithJwt();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddMemoryCache();
+// قبل از builder.Services.AddControllers()
+// ========== CORS ==========
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("VueApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+// قبل از app.UseAuthentication()
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -52,6 +66,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("VueApp");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

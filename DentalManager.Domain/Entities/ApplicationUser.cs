@@ -31,17 +31,13 @@ public partial class ApplicationUser : IdentityUser
     public string? University { get; set; }
     public string? Education { get; set; }
 
-    // ========== FullName (برای AuthService) ==========
-    public string? FullName { get; set; }
+
 
     // ========== رابطه‌های جدید ==========
     public ICollection<TlbRefreshToken> RefreshTokens { get; set; } = new List<TlbRefreshToken>();
     public ICollection<TlbLoginLog> LoginLogs { get; set; } = new List<TlbLoginLog>(); // اسم درست
 
     // ========== بقیه رابطه‌ها ==========
-    public virtual ICollection<ApplicationUserClaim> ApplicationUserClaims { get; set; } = new List<ApplicationUserClaim>();
-    public virtual ICollection<ApplicationUserLogin> ApplicationUserLogins { get; set; } = new List<ApplicationUserLogin>();
-    public virtual ICollection<ApplicationUserToken> ApplicationUserTokens { get; set; } = new List<ApplicationUserToken>();
     public virtual ICollection<BankAccountStaff> BankAccountStaffs { get; set; } = new List<BankAccountStaff>();
     public virtual TlbOfficeBuilding? Office { get; set; }
     public virtual ICollection<Payroll> Payrolls { get; set; } = new List<Payroll>();

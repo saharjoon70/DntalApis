@@ -21,33 +21,19 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
 
     public virtual DbSet<ApplicationRole> AppRoles { get; set; }
 
-    public virtual DbSet<ApplicationRoleClaim> AppRoleClaims { get; set; }
 
     public virtual DbSet<ApplicationUser> AppUsers { get; set; }
 
-    public virtual DbSet<ApplicationUserClaim> AppUserClaims { get; set; }
 
-    public virtual DbSet<ApplicationUserLogin> AppUserLogins { get; set; }
-
-    public virtual DbSet<ApplicationUserToken> AppUserTokens { get; set; }
 
     public virtual DbSet<BankAccountStaff> BankAccountStaffs { get; set; }
 
-    public virtual DbSet<Counter> Counters { get; set; }
+
 
     public virtual DbSet<DashboardSummery> DashboardSummeries { get; set; }
 
     public virtual DbSet<EmployeeBenefit> EmployeeBenefits { get; set; }
 
-    public virtual DbSet<Hash> Hashes { get; set; }
-
-    public virtual DbSet<Job> Jobs { get; set; }
-
-    public virtual DbSet<JobParameter> JobParameters { get; set; }
-
-    public virtual DbSet<JobQueue> JobQueues { get; set; }
-
-    public virtual DbSet<List> Lists { get; set; }
     public virtual DbSet<TlbRefreshToken> TlbRefreshTokens { get; set; }
     public virtual DbSet<TlbLoginLog> TlbLoginLogs { get; set; }
 
@@ -63,13 +49,7 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
 
     public virtual DbSet<SalaryPayment> SalaryPayments { get; set; }
 
-    public virtual DbSet<Schema> Schemas { get; set; }
 
-    public virtual DbSet<Server> Servers { get; set; }
-
-    public virtual DbSet<Set> Sets { get; set; }
-
-    public virtual DbSet<State> States { get; set; }
 
     public virtual DbSet<TlbAccountGeneralChart> TlbAccountGeneralCharts { get; set; }
 
@@ -180,6 +160,7 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<ApplicationRole>(entity =>
         {
@@ -195,12 +176,7 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.NormalizedName).HasMaxLength(256);
         });
 
-        modelBuilder.Entity<ApplicationRoleClaim>(entity =>
-        {
-            entity.HasIndex(e => e.RoleId, "IX_AspNetRoleClaims_RoleId");
 
-            entity.HasOne(d => d.Role).WithMany(p => p.AspNetRoleClaims).HasForeignKey(d => d.RoleId);
-        });
 
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
@@ -248,28 +224,6 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
                     });
         });
 
-        modelBuilder.Entity<ApplicationUserClaim>(entity =>
-        {
-            entity.HasIndex(e => e.UserId, "IX_ApplicationUserClaims_UserId");
-
-            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserClaims).HasForeignKey(d => d.UserId);
-        });
-
-        modelBuilder.Entity<ApplicationUserLogin>(entity =>
-        {
-            entity.HasKey(e => new { e.LoginProvider, e.ProviderKey });
-
-            entity.HasIndex(e => e.UserId, "IX_ApplicationUserLogins_UserId");
-
-            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserLogins).HasForeignKey(d => d.UserId);
-        });
-
-        modelBuilder.Entity<ApplicationUserToken>(entity =>
-        {
-            entity.HasKey(e => new { e.UserId, e.LoginProvider, e.Name });
-
-            entity.HasOne(d => d.User).WithMany(p => p.ApplicationUserTokens).HasForeignKey(d => d.UserId);
-        });
 
         modelBuilder.Entity<BankAccountStaff>(entity =>
         {
@@ -291,17 +245,6 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(d => d.Bank).WithMany(p => p.BankAccountStaffs).HasForeignKey(d => d.BankId);
 
             entity.HasOne(d => d.Staff).WithMany(p => p.BankAccountStaffs).HasForeignKey(d => d.StaffId);
-        });
-
-        modelBuilder.Entity<Counter>(entity =>
-        {
-            entity.HasKey(e => new { e.Key, e.Id }).HasName("PK_HangFire_Counter");
-
-            entity.ToTable("Counter", "HangFire");
-
-            entity.Property(e => e.Key).HasMaxLength(100);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.ExpireAt).HasColumnType("datetime");
         });
 
         modelBuilder.Entity<DashboardSummery>(entity =>
@@ -330,69 +273,8 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(d => d.PayrollItemType).WithMany(p => p.EmployeeBenefits).HasForeignKey(d => d.PayrollItemTypeId);
         });
 
-        modelBuilder.Entity<Hash>(entity =>
-        {
-            entity.HasKey(e => new { e.Key, e.Field }).HasName("PK_HangFire_Hash");
 
-            entity.ToTable("Hash", "HangFire");
 
-            entity.HasIndex(e => e.ExpireAt, "IX_HangFire_Hash_ExpireAt").HasFilter("([ExpireAt] IS NOT NULL)");
-
-            entity.Property(e => e.Key).HasMaxLength(100);
-            entity.Property(e => e.Field).HasMaxLength(100);
-        });
-
-        modelBuilder.Entity<Job>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_HangFire_Job");
-
-            entity.ToTable("Job", "HangFire");
-
-            entity.HasIndex(e => e.ExpireAt, "IX_HangFire_Job_ExpireAt").HasFilter("([ExpireAt] IS NOT NULL)");
-
-            entity.HasIndex(e => e.StateName, "IX_HangFire_Job_StateName").HasFilter("([StateName] IS NOT NULL)");
-
-            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
-            entity.Property(e => e.ExpireAt).HasColumnType("datetime");
-            entity.Property(e => e.StateName).HasMaxLength(20);
-        });
-
-        modelBuilder.Entity<JobParameter>(entity =>
-        {
-            entity.HasKey(e => new { e.JobId, e.Name }).HasName("PK_HangFire_JobParameter");
-
-            entity.ToTable("JobParameter", "HangFire");
-
-            entity.Property(e => e.Name).HasMaxLength(40);
-
-            entity.HasOne(d => d.Job).WithMany(p => p.JobParameters)
-                .HasForeignKey(d => d.JobId)
-                .HasConstraintName("FK_HangFire_JobParameter_Job");
-        });
-
-        modelBuilder.Entity<JobQueue>(entity =>
-        {
-            entity.HasKey(e => new { e.Queue, e.Id }).HasName("PK_HangFire_JobQueue");
-
-            entity.ToTable("JobQueue", "HangFire");
-
-            entity.Property(e => e.Queue).HasMaxLength(50);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.FetchedAt).HasColumnType("datetime");
-        });
-
-        modelBuilder.Entity<List>(entity =>
-        {
-            entity.HasKey(e => new { e.Key, e.Id }).HasName("PK_HangFire_List");
-
-            entity.ToTable("List", "HangFire");
-
-            entity.HasIndex(e => e.ExpireAt, "IX_HangFire_List_ExpireAt").HasFilter("([ExpireAt] IS NOT NULL)");
-
-            entity.Property(e => e.Key).HasMaxLength(100);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.ExpireAt).HasColumnType("datetime");
-        });
 
         modelBuilder.Entity<Payroll>(entity =>
         {
@@ -470,59 +352,7 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(d => d.Transaction).WithMany(p => p.SalaryPayments).HasForeignKey(d => d.TransactionId);
         });
 
-        modelBuilder.Entity<Schema>(entity =>
-        {
-            entity.HasKey(e => e.Version).HasName("PK_HangFire_Schema");
 
-            entity.ToTable("Schema", "HangFire");
-
-            entity.Property(e => e.Version).ValueGeneratedNever();
-        });
-
-        modelBuilder.Entity<Server>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_HangFire_Server");
-
-            entity.ToTable("Server", "HangFire");
-
-            entity.HasIndex(e => e.LastHeartbeat, "IX_HangFire_Server_LastHeartbeat");
-
-            entity.Property(e => e.Id).HasMaxLength(200);
-            entity.Property(e => e.LastHeartbeat).HasColumnType("datetime");
-        });
-
-        modelBuilder.Entity<Set>(entity =>
-        {
-            entity.HasKey(e => new { e.Key, e.Value }).HasName("PK_HangFire_Set");
-
-            entity.ToTable("Set", "HangFire");
-
-            entity.HasIndex(e => e.ExpireAt, "IX_HangFire_Set_ExpireAt").HasFilter("([ExpireAt] IS NOT NULL)");
-
-            entity.HasIndex(e => new { e.Key, e.Score }, "IX_HangFire_Set_Score");
-
-            entity.Property(e => e.Key).HasMaxLength(100);
-            entity.Property(e => e.Value).HasMaxLength(256);
-            entity.Property(e => e.ExpireAt).HasColumnType("datetime");
-        });
-
-        modelBuilder.Entity<State>(entity =>
-        {
-            entity.HasKey(e => new { e.JobId, e.Id }).HasName("PK_HangFire_State");
-
-            entity.ToTable("State", "HangFire");
-
-            entity.HasIndex(e => e.CreatedAt, "IX_HangFire_State_CreatedAt");
-
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
-            entity.Property(e => e.Name).HasMaxLength(20);
-            entity.Property(e => e.Reason).HasMaxLength(100);
-
-            entity.HasOne(d => d.Job).WithMany(p => p.States)
-                .HasForeignKey(d => d.JobId)
-                .HasConstraintName("FK_HangFire_State_Job");
-        });
 
         modelBuilder.Entity<TlbAccountGeneralChart>(entity =>
         {

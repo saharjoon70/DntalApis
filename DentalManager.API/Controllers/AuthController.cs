@@ -31,9 +31,6 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.LoginAsync(dto, ipAddress, userAgent);
 
-            if (result.RequiresCaptcha)
-                return Ok(new { requiresCaptcha = true, message = "لطفاً کد امنیتی را وارد کنید" });
-
             return Ok(result);
         }
         catch (UnauthorizedAccessException ex)

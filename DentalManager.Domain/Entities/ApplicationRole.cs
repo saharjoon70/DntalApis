@@ -16,7 +16,5 @@ public partial class ApplicationRole : IdentityRole
 
     public string? ConcurrencyStamp { get; set; }
 
-    public virtual ICollection<ApplicationRoleClaim> AspNetRoleClaims { get; set; } = new List<ApplicationRoleClaim>();
-
     public virtual ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
 }

@@ -19,6 +19,8 @@ namespace DentalManager.Application.DTOs.Auth
         public bool RequiresCaptcha { get; set; }
         public string AccessToken { get; set; }
         public string RefreshToken { get; set; }
+        public string? CaptchaId { get; set; }
+        public string? CaptchaCode { get; set; }
         public DateTime AccessTokenExpiresAt { get; set; }
         public DateTime RefreshTokenExpiresAt { get; set; }
     }
