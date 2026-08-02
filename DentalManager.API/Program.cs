@@ -36,6 +36,8 @@ builder.Services.AddRateLimiter(options =>
         config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
     });
 });
+
+
 builder.Services.AddApplicationServices();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -45,6 +47,7 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddMemoryCache();
 // قبل از builder.Services.AddControllers()
 // ========== CORS ==========
+// اینو قبل از app.UseCors بذار
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("VueApp", policy =>
@@ -52,11 +55,16 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials()
+              .SetPreflightMaxAge(TimeSpan.FromHours(24)); // ← کش کردن ۲۴ ساعته
     });
 });
 // قبل از app.UseAuthentication()
-
+// قبل از builder.Build()
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -65,10 +73,24 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseCors("VueApp");
+// قبل از app.UseCors
+app.Use(async (context, next) =>
+{
+    // کش کردن connection برای درخواست‌های بعدی
+    context.Response.Headers["Connection"] = "keep-alive";
+    await next();
+});
+
+app.UseCors("VueApp");
+
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
+
 
 app.Run();

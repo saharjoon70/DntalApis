@@ -9,7 +9,7 @@ public static class ServiceRegistration
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         // ========== سرویس‌های Core ==========
-
+        services.AddHostedService<DatabaseWarmupService>();
         services.AddScoped<IAuthService, AuthService>();
 
         // ========== Repository ها ==========
