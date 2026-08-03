@@ -22,21 +22,6 @@ namespace DentalManager.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("ApplicationUserRole", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("RoleId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("UserId", "RoleId");
-
-                    b.HasIndex(new[] { "RoleId" }, "IX_ApplicationUserRoles_RoleId");
-
-                    b.ToTable("ApplicationUserRoles", (string)null);
-                });
-
             modelBuilder.Entity("DentalManager.Domain.Entities.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -2644,20 +2629,6 @@ namespace DentalManager.Infrastructure.Migrations
                         .HasFilter("([NormalizedName] IS NOT NULL)");
 
                     b.HasDiscriminator().HasValue("ApplicationRole");
-                });
-
-            modelBuilder.Entity("ApplicationUserRole", b =>
-                {
-                    b.HasOne("DentalManager.Domain.Entities.ApplicationRole", null)
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .IsRequired();
-
-                    b.HasOne("DentalManager.Domain.Entities.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("DentalManager.Domain.Entities.ApplicationUser", b =>

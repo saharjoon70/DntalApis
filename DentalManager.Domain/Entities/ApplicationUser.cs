@@ -45,5 +45,7 @@ public partial class ApplicationUser : IdentityUser
     public virtual TlbDoctor? TlbDoctor { get; set; }
     public virtual ICollection<TlbLeaf> TlbLeaves { get; set; } = new List<TlbLeaf>();
     public virtual TlbOfficeAdmin? TlbOfficeAdmin { get; set; }
-    public virtual ICollection<ApplicationRole> Roles { get; set; } = new List<ApplicationRole>();
+    //public virtual ICollection<ApplicationUserRole> UsersRoles { get; set; }
+
+
 }

@@ -54,10 +54,10 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponseDto> LoginAsync(LoginDto dto, string ipAddress, string userAgent)
     {
-       // var sw = Stopwatch.StartNew();
+        var sw = Stopwatch.StartNew();
 
         var user = await _userManager.FindByNameAsync(dto.Username);
-       // _logger.LogInformation("FindByNameAsync: {Elapsed} ms", sw.ElapsedMilliseconds);
+      
 
         if (user == null)
         {
@@ -79,9 +79,9 @@ public class AuthService : IAuthService
             }
         }
 
-        //sw.Restart();
+     
         var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
-       // _logger.LogInformation("CheckPasswordSignInAsync: {Elapsed} ms", sw.ElapsedMilliseconds);
+      
 
         if (result.IsLockedOut)
         {
@@ -95,21 +95,22 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("نام کاربری یا رمز عبور اشتباه است");
         }
 
-       // sw.Restart();
+   
         await LogLogin(user.Id, ipAddress, userAgent, true, null);
-       // _logger.LogInformation("LogLogin(success): {Elapsed} ms", sw.ElapsedMilliseconds);
+     
 
-        //sw.Restart();
+    
         var roles = await _userManager.GetRolesAsync(user);
-       // _logger.LogInformation("GetRolesAsync: {Elapsed} ms", sw.ElapsedMilliseconds);
+       
 
         var role = roles.FirstOrDefault() ?? "User";
         var accessToken = GenerateAccessToken(user, role, dto.RememberMe);
 
-       // sw.Restart();
+      
         var (refreshToken, refreshExpiresAt) = await GenerateRefreshTokenAsync(
             user.Id, dto.RememberMe, ipAddress, userAgent);
-       // _logger.LogInformation("GenerateRefreshToken: {Elapsed} ms", sw.ElapsedMilliseconds);
+        sw.Stop();
+        _logger.LogInformation("All Time: {Elapsed} ms", sw.ElapsedMilliseconds);
 
         return new LoginResponseDto
         {
@@ -233,7 +234,7 @@ public class AuthService : IAuthService
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Name, user.UserName ?? ""),
+            //new Claim(ClaimTypes.Name, user.UserName ?? ""),
             new Claim(ClaimTypes.Role, role),
             new Claim("FullName", FormatFullName(user))
         };

@@ -209,19 +209,7 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
 
             entity.HasOne(d => d.Office).WithMany(p => p.ApplicationUsers).HasForeignKey(d => d.OfficeId);
 
-            entity.HasMany(d => d.Roles).WithMany(p => p.Users)
-                .UsingEntity<Dictionary<string, object>>(
-                    "ApplicationUserRole",
-                    r => r.HasOne<ApplicationRole>().WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.ClientSetNull),
-                    l => l.HasOne<ApplicationUser>().WithMany().HasForeignKey("UserId"),
-                    j =>
-                    {
-                        j.HasKey("UserId", "RoleId");
-                        j.ToTable("ApplicationUserRoles");
-                        j.HasIndex(new[] { "RoleId" }, "IX_ApplicationUserRoles_RoleId");
-                    });
+         
         });
 
 

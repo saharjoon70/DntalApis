@@ -2,9 +2,8 @@
 using DentalManager.Domain.Entities;
 using DentalManager.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.RateLimiting;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,18 +25,19 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<DentalContext>()
 .AddDefaultTokenProviders();
 
-// ========== Services ==========
-builder.Services.AddRateLimiter(options =>
+// ========== CORS ==========
+builder.Services.AddCors(options =>
 {
-    options.AddFixedWindowLimiter("login", config =>
+    options.AddDefaultPolicy(policy =>
     {
-        config.PermitLimit = 5; // ۵ درخواست
-        config.Window = TimeSpan.FromMinutes(1); // در هر ۱ دقیقه
-        config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .SetPreflightMaxAge(TimeSpan.FromHours(24));
     });
 });
 
-
+// ========== Services ==========
 builder.Services.AddApplicationServices();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -45,26 +45,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerWithJwt();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddMemoryCache();
-// قبل از builder.Services.AddControllers()
-// ========== CORS ==========
-// اینو قبل از app.UseCors بذار
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("VueApp", policy =>
-    {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials()
-              .SetPreflightMaxAge(TimeSpan.FromHours(24)); // ← کش کردن ۲۴ ساعته
-    });
-});
-// قبل از app.UseAuthentication()
-// قبل از builder.Build()
-builder.Services.AddResponseCompression(options =>
-{
-    options.EnableForHttps = true;
-});
+
+// ========== Pipeline ==========
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -73,24 +55,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
-app.UseCors("VueApp");
-// قبل از app.UseCors
+// ⏱️ زمان‌سنج
 app.Use(async (context, next) =>
 {
-    // کش کردن connection برای درخواست‌های بعدی
-    context.Response.Headers["Connection"] = "keep-alive";
+    var sw = Stopwatch.StartNew();
     await next();
+    Console.WriteLine($"⏱️ [{context.Request.Method}] {context.Request.Path} → {sw.ElapsedMilliseconds}ms");
 });
 
-app.UseCors("VueApp");
-
-app.UseRateLimiter();
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
-
 app.Run();
