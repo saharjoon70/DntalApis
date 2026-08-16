@@ -26,6 +26,7 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
 
 
 
+
     public virtual DbSet<BankAccountStaff> BankAccountStaffs { get; set; }
 
 
@@ -211,6 +212,7 @@ public partial class DentalContext : IdentityDbContext<ApplicationUser>
 
          
         });
+
 
 
         modelBuilder.Entity<BankAccountStaff>(entity =>

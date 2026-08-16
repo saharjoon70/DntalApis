@@ -629,29 +629,6 @@ namespace DentalManager.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ApplicationUserRoles",
-                columns: table => new
-                {
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ApplicationUserRoles", x => new { x.UserId, x.RoleId });
-                    table.ForeignKey(
-                        name: "FK_ApplicationUserRoles_AspNetRoles_RoleId",
-                        column: x => x.RoleId,
-                        principalTable: "AspNetRoles",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_ApplicationUserRoles_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetUserClaims",
                 columns: table => new
                 {
@@ -697,17 +674,29 @@ namespace DentalManager.Infrastructure.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ApplicationRoleId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ApplicationUserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUserRoles", x => new { x.UserId, x.RoleId });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetRoles_ApplicationRoleId",
+                        column: x => x.ApplicationRoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AspNetUserRoles_AspNetRoles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "AspNetRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetUsers_ApplicationUserId",
+                        column: x => x.ApplicationUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AspNetUserRoles_AspNetUsers_UserId",
                         column: x => x.UserId,
@@ -1770,11 +1759,6 @@ namespace DentalManager.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ApplicationUserRoles_RoleId",
-                table: "ApplicationUserRoles",
-                column: "RoleId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
                 column: "RoleId");
@@ -1809,6 +1793,16 @@ namespace DentalManager.Infrastructure.Migrations
                 name: "IX_AspNetUserLogins_UserId",
                 table: "AspNetUserLogins",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserRoles_ApplicationRoleId",
+                table: "AspNetUserRoles",
+                column: "ApplicationRoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserRoles_ApplicationUserId",
+                table: "AspNetUserRoles",
+                column: "ApplicationUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserRoles_RoleId",
@@ -2209,9 +2203,6 @@ namespace DentalManager.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "ApplicationUserRoles");
-
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 

@@ -12,9 +12,7 @@ public partial class ApplicationRole : IdentityRole
 
     public string? Name { get; set; }
 
-    public string? NormalizedName { get; set; }
 
-    public string? ConcurrencyStamp { get; set; }
 
-    //public virtual ICollection<ApplicationUserRole> UserRoles { get; set; }
+
 }

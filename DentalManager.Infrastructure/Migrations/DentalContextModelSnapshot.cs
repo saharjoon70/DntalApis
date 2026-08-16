@@ -2571,7 +2571,17 @@ namespace DentalManager.Infrastructure.Migrations
                     b.Property<string>("RoleId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("ApplicationRoleId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ApplicationUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("ApplicationRoleId");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("RoleId");
 
@@ -3302,6 +3312,14 @@ namespace DentalManager.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
+                    b.HasOne("DentalManager.Domain.Entities.ApplicationRole", null)
+                        .WithMany("UserRoles")
+                        .HasForeignKey("ApplicationRoleId");
+
+                    b.HasOne("DentalManager.Domain.Entities.ApplicationUser", null)
+                        .WithMany("UserRoles")
+                        .HasForeignKey("ApplicationUserId");
+
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
@@ -3356,6 +3374,8 @@ namespace DentalManager.Infrastructure.Migrations
                     b.Navigation("TlbLeaves");
 
                     b.Navigation("TlbOfficeAdmin");
+
+                    b.Navigation("UserRoles");
                 });
 
             modelBuilder.Entity("DentalManager.Domain.Entities.Payroll", b =>
@@ -3564,6 +3584,11 @@ namespace DentalManager.Infrastructure.Migrations
             modelBuilder.Entity("DentalManager.Domain.Entities.Tlblaboratory", b =>
                 {
                     b.Navigation("TlbLabOrders");
+                });
+
+            modelBuilder.Entity("DentalManager.Domain.Entities.ApplicationRole", b =>
+                {
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }
