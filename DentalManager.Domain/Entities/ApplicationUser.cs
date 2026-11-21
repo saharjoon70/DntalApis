@@ -6,8 +6,6 @@ namespace DentalManager.Domain.Entities;
 
 public partial class ApplicationUser : IdentityUser
 {
-
-
     // ========== فیلدهای سفارشی ==========
     public DateTime? LatestActivity { get; set; }
     public DateTime? PasswordChangeDate { get; set; }
@@ -31,24 +29,16 @@ public partial class ApplicationUser : IdentityUser
     public string? University { get; set; }
     public string? Education { get; set; }
 
-
-
-    // ========== رابطه‌های جدید ==========
+    // ========== رابطه‌ها ==========
     public ICollection<TlbRefreshToken> RefreshTokens { get; set; } = new List<TlbRefreshToken>();
-    public ICollection<TlbLoginLog> LoginLogs { get; set; } = new List<TlbLoginLog>(); // اسم درست
+    public ICollection<TlbLoginLog> LoginLogs { get; set; } = new List<TlbLoginLog>();
 
-    // ========== بقیه رابطه‌ها ==========
-    public virtual ICollection<BankAccountStaff> BankAccountStaffs { get; set; } = new List<BankAccountStaff>();
-    public virtual TlbOfficeBuilding? Office { get; set; }
-    public virtual ICollection<Payroll> Payrolls { get; set; } = new List<Payroll>();
-    public virtual ICollection<TlbContract> TlbContracts { get; set; } = new List<TlbContract>();
-    public virtual TlbDoctor? TlbDoctor { get; set; }
-    public virtual ICollection<TlbLeaf> TlbLeaves { get; set; } = new List<TlbLeaf>();
-    public virtual TlbOfficeAdmin? TlbOfficeAdmin { get; set; }
+    // ========== پرسنل ==========
+    public virtual Doctor? Doctor { get; set; }
+    public virtual Employee? Employee { get; set; }
+    public virtual ICollection<UserShift> Shifts { get; set; } = new List<UserShift>();
+    public virtual ICollection<UserAbsence> Absences { get; set; } = new List<UserAbsence>();
+    public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
-   
-
-
-
-
+    public virtual ICollection<ApplicationUserRole> UserRoles { get; set; } = new List<ApplicationUserRole>();
 }

@@ -12,7 +12,7 @@ builder.Services.AddDbContext<DentalContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")));
 
 // ========== Identity ==========
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
     options.Lockout.AllowedForNewUsers = true;
     options.Lockout.MaxFailedAccessAttempts = 10;
@@ -49,13 +49,14 @@ builder.Services.AddMemoryCache();
 // ========== Pipeline ==========
 var app = builder.Build();
 
+//await DbSeeder.SeedAsync(app.Services);
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// ⏱️ زمان‌سنج
 app.Use(async (context, next) =>
 {
     var sw = Stopwatch.StartNew();
@@ -64,7 +65,6 @@ app.Use(async (context, next) =>
 });
 
 app.UseCors();
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -11,7 +11,8 @@ public static class ServiceRegistration
         // ========== سرویس‌های Core ==========
         services.AddHostedService<DatabaseWarmupService>();
         services.AddScoped<IAuthService, AuthService>();
-
+        services.AddScoped<IStaffService, StaffService>();
+        services.AddScoped<IContractService, ContractService>();
         // ========== Repository ها ==========
 
 

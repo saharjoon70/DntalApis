@@ -13,6 +13,6 @@ public partial class ApplicationRole : IdentityRole
     public string? Name { get; set; }
 
 
-
+    public ICollection<ApplicationUserRole> UserRoles { get; set; } = new List<ApplicationUserRole>();
 
 }
