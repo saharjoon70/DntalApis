@@ -31,4 +31,9 @@ public class StaffDto
     public int ContractCount { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public string? GeneratedUsername { get; set; }
+    public string? GeneratedPassword { get; set; }
+    public bool? SmsSent { get; set; }
+    public string? SmsError { get; set; }
 }

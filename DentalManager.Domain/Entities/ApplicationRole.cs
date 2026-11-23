@@ -6,7 +6,6 @@ namespace DentalManager.Domain.Entities;
 
 public partial class ApplicationRole : IdentityRole
 {
-    public string Id { get; set; } = null!;
 
     public string? FaName { get; set; }
 

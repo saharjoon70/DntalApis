@@ -13,11 +13,13 @@ public class StaffService : IStaffService
     private readonly DentalContext _ctx;
     private readonly UserManager<ApplicationUser> _userManager;
     private const string DefaultPassword = "Staff@12345";
+    private readonly ISmsService _sms;
 
-    public StaffService(DentalContext ctx, UserManager<ApplicationUser> userManager)
+    public StaffService(DentalContext ctx, UserManager<ApplicationUser> userManager, ISmsService sms)
     {
         _ctx = ctx;
         _userManager = userManager;
+        _sms = sms;
     }
 
     public async Task<StaffListResult> GetListAsync(StaffQueryDto q, CancellationToken ct = default)
@@ -101,19 +103,56 @@ public class StaffService : IStaffService
 
     public async Task<StaffDto> CreateDoctorAsync(StaffCreateDoctorDto dto, CancellationToken ct = default)
     {
-        var user = await CreateUserBaseAsync(
-            dto.FirstName, dto.LastName, dto.Phone, dto.NationalCode,
-            dto.BirthDate, dto.Gender, dto.Email, dto.Address, dto.Password, ct);
+        try
+        {
+            var user = await CreateUserBaseAsync(
+                dto.FirstName, dto.LastName, dto.Phone, dto.NationalCode,
+                dto.BirthDate, dto.Gender, dto.Email, dto.Address, dto.Password, ct);
 
-        var doctor = new Doctor { UserId = user.Id, MedicalCode = dto.MedicalCode, Specialty = dto.Specialty };
-        _ctx.Doctors.Add(doctor);
-        await _ctx.SaveChangesAsync(ct);
+            var doctor = new Doctor { UserId = user.Id, MedicalCode = dto.MedicalCode, Specialty = dto.Specialty };
+            _ctx.Doctors.Add(doctor);
+            await _ctx.SaveChangesAsync(ct);
 
-        await _userManager.AddToRoleAsync(user, "Doctor");
-        user.Doctor = doctor;
-        return Map(user);
+            await _userManager.AddToRoleAsync(user, "Doctor");
+            user.Doctor = doctor;
+            var staffDto = Map(user);
+            staffDto.GeneratedUsername = user.UserName;
+            staffDto.GeneratedPassword = user.PhoneNumber;
+            await SendCredentialsSmsAsync(user, staffDto, ct);
+            return staffDto;
+        }
+        catch(Exception ex)
+        {
+            throw ex;
+        }
     }
+    private async Task SendCredentialsSmsAsync(ApplicationUser user, StaffDto dto, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(user.PhoneNumber))
+        {
+            dto.SmsSent = false;
+            dto.SmsError = "شماره موبایل ثبت نشده";
+            return;
+        }
 
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        var message =
+            $"{fullName} عزیز، به سامانه دنتال خوش آمدید.\n" +
+            $"نام کاربری: {user.UserName}\n" +
+            $"رمز عبور: {user.PhoneNumber}";
+
+        try
+        {
+            var sent = await _sms.SendAsync(user.PhoneNumber, message, ct);
+            dto.SmsSent = sent;
+            dto.SmsError = sent ? null : "ارسال پیامک ناموفق بود";
+        }
+        catch (Exception ex)
+        {
+            dto.SmsSent = false;
+            dto.SmsError = ex.Message;
+        }
+    }
     public async Task<StaffDto> CreateEmployeeAsync(StaffCreateEmployeeDto dto, CancellationToken ct = default)
     {
         var user = await CreateUserBaseAsync(
@@ -127,7 +166,11 @@ public class StaffService : IStaffService
         var role = ResolveRoleForPosition(dto.Position);
         await _userManager.AddToRoleAsync(user, role);
         user.Employee = emp;
-        return Map(user);
+        var staffDto = Map(user);
+        staffDto.GeneratedUsername = user.UserName;
+        staffDto.GeneratedPassword = user.PhoneNumber;
+        await SendCredentialsSmsAsync(user, staffDto, ct);
+        return staffDto;
     }
 
     public async Task<StaffDto> UpdateAsync(string id, StaffUpdateDto dto, CancellationToken ct = default)
