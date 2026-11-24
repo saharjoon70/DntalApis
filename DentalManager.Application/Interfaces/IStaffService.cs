@@ -12,4 +12,5 @@ public interface IStaffService
     Task<bool> ToggleActiveAsync(string id, CancellationToken ct = default);
     Task DeleteAsync(string id, CancellationToken ct = default);
     Task<int> BulkDeleteAsync(IEnumerable<string> ids, CancellationToken ct = default);
+    Task<StaffDto> ResendCredentialsAsync(string id, CancellationToken ct = default);
 }

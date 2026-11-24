@@ -62,4 +62,12 @@ public class StaffController : ControllerBase
         var deleted = await _service.BulkDeleteAsync(ids, ct);
         return Ok(new { deleted });
     }
+
+    // ⭐ جدید: ارسال مجدد اطلاعات ورود
+    [HttpPost("{id}/resend-credentials")]
+    public async Task<ActionResult<StaffDto>> ResendCredentials(string id, CancellationToken ct)
+    {
+        var result = await _service.ResendCredentialsAsync(id, ct);
+        return Ok(result);
+    }
 }

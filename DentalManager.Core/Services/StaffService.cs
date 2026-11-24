@@ -4,7 +4,6 @@ using DentalManager.Domain.Entities;
 using DentalManager.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace DentalManager.Core.Services;
 
@@ -12,7 +11,6 @@ public class StaffService : IStaffService
 {
     private readonly DentalContext _ctx;
     private readonly UserManager<ApplicationUser> _userManager;
-    private const string DefaultPassword = "Staff@12345";
     private readonly ISmsService _sms;
 
     public StaffService(DentalContext ctx, UserManager<ApplicationUser> userManager, ISmsService sms)
@@ -22,23 +20,24 @@ public class StaffService : IStaffService
         _sms = sms;
     }
 
+    // ==================== GetList ====================
     public async Task<StaffListResult> GetListAsync(StaffQueryDto q, CancellationToken ct = default)
     {
         var query = _ctx.AppUsers
             .Include(u => u.Doctor)
             .Include(u => u.Employee)
             .Include(u => u.Contracts)
-            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)   
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
             .AsNoTracking()
             .AsQueryable();
 
-        // فیلترها
         if (!string.IsNullOrWhiteSpace(q.Search))
         {
             var s = q.Search.Trim();
             query = query.Where(u =>
                 (u.FirstName != null && u.FirstName.Contains(s)) ||
                 (u.LastName != null && u.LastName.Contains(s)) ||
+                (u.UserName != null && u.UserName.Contains(s)) ||
                 (u.Doctor != null && u.Doctor.MedicalCode != null && u.Doctor.MedicalCode.Contains(s)) ||
                 (u.Doctor != null && u.Doctor.Specialty != null && u.Doctor.Specialty.Contains(s)) ||
                 (u.Employee != null && u.Employee.Position != null && u.Employee.Position.Contains(s)) ||
@@ -58,13 +57,11 @@ public class StaffService : IStaffService
 
         var total = await query.CountAsync(ct);
 
-        // KPI ها روی کل query (بدون page)
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var doctorsCount = await query.CountAsync(u => u.Doctor != null && u.IsActive == true, ct);
         var staffCount = await query.CountAsync(u => u.Employee != null && u.IsActive == true, ct);
-
         var absentToday = await _ctx.UserAbsences
-    .CountAsync(a => DateOnly.FromDateTime(a.Date) == today && a.User.IsActive == true, ct);
+            .CountAsync(a => DateOnly.FromDateTime(a.Date) == today && a.User.IsActive == true, ct);
         var presentToday = Math.Max(0, doctorsCount - absentToday);
         var activeContracts = await _ctx.Contracts
             .CountAsync(c => c.Status != "terminated" && (c.EndDate == null || c.EndDate >= today), ct);
@@ -89,75 +86,54 @@ public class StaffService : IStaffService
         };
     }
 
+    // ==================== GetById ====================
     public async Task<StaffDto?> GetByIdAsync(string id, CancellationToken ct = default)
     {
         var user = await _ctx.AppUsers
             .Include(u => u.Doctor)
             .Include(u => u.Employee)
             .Include(u => u.Contracts)
-             .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)   // ⭐ اضافه
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == id, ct);
+
         return user == null ? null : Map(user);
     }
 
+    // ==================== CreateDoctor ====================
     public async Task<StaffDto> CreateDoctorAsync(StaffCreateDoctorDto dto, CancellationToken ct = default)
     {
-        try
-        {
-            var user = await CreateUserBaseAsync(
-                dto.FirstName, dto.LastName, dto.Phone, dto.NationalCode,
-                dto.BirthDate, dto.Gender, dto.Email, dto.Address, dto.Password, ct);
+        var (user, password) = await CreateUserBaseAsync(
+            dto.FirstName, dto.LastName, dto.Phone, dto.NationalCode,
+            dto.BirthDate, dto.Gender, dto.Email, dto.Address,
+            dto.Password, roleKey: "doctor", ct);
 
-            var doctor = new Doctor { UserId = user.Id, MedicalCode = dto.MedicalCode, Specialty = dto.Specialty };
-            _ctx.Doctors.Add(doctor);
-            await _ctx.SaveChangesAsync(ct);
-
-            await _userManager.AddToRoleAsync(user, "Doctor");
-            user.Doctor = doctor;
-            var staffDto = Map(user);
-            staffDto.GeneratedUsername = user.UserName;
-            staffDto.GeneratedPassword = user.PhoneNumber;
-            await SendCredentialsSmsAsync(user, staffDto, ct);
-            return staffDto;
-        }
-        catch(Exception ex)
+        var doctor = new Doctor
         {
-            throw ex;
-        }
+            UserId = user.Id,
+            MedicalCode = dto.MedicalCode,
+            Specialty = dto.Specialty
+        };
+        _ctx.Doctors.Add(doctor);
+        await _ctx.SaveChangesAsync(ct);
+
+        await _userManager.AddToRoleAsync(user, "Doctor");
+        user.Doctor = doctor;
+
+        var staffDto = Map(user);
+        staffDto.GeneratedUsername = user.UserName;
+        staffDto.GeneratedPassword = password;
+        await SendCredentialsSmsAsync(user, staffDto, ct);
+        return staffDto;
     }
-    private async Task SendCredentialsSmsAsync(ApplicationUser user, StaffDto dto, CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(user.PhoneNumber))
-        {
-            dto.SmsSent = false;
-            dto.SmsError = "شماره موبایل ثبت نشده";
-            return;
-        }
 
-        var fullName = $"{user.FirstName} {user.LastName}".Trim();
-        var message =
-            $"{fullName} عزیز، به سامانه دنتال خوش آمدید.\n" +
-            $"نام کاربری: {user.UserName}\n" +
-            $"رمز عبور: {user.PhoneNumber}";
-
-        try
-        {
-            var sent = await _sms.SendAsync(user.PhoneNumber, message, ct);
-            dto.SmsSent = sent;
-            dto.SmsError = sent ? null : "ارسال پیامک ناموفق بود";
-        }
-        catch (Exception ex)
-        {
-            dto.SmsSent = false;
-            dto.SmsError = ex.Message;
-        }
-    }
+    // ==================== CreateEmployee ====================
     public async Task<StaffDto> CreateEmployeeAsync(StaffCreateEmployeeDto dto, CancellationToken ct = default)
     {
-        var user = await CreateUserBaseAsync(
+        var (user, password) = await CreateUserBaseAsync(
             dto.FirstName, dto.LastName, dto.Phone, dto.NationalCode,
-            dto.BirthDate, dto.Gender, dto.Email, dto.Address, dto.Password, ct);
+            dto.BirthDate, dto.Gender, dto.Email, dto.Address,
+            dto.Password, roleKey: "employee", ct);
 
         var emp = new Employee { UserId = user.Id, Position = dto.Position };
         _ctx.Employees.Add(emp);
@@ -166,17 +142,20 @@ public class StaffService : IStaffService
         var role = ResolveRoleForPosition(dto.Position);
         await _userManager.AddToRoleAsync(user, role);
         user.Employee = emp;
+
         var staffDto = Map(user);
         staffDto.GeneratedUsername = user.UserName;
-        staffDto.GeneratedPassword = user.PhoneNumber;
+        staffDto.GeneratedPassword = password;
         await SendCredentialsSmsAsync(user, staffDto, ct);
         return staffDto;
     }
 
+    // ==================== Update ====================
     public async Task<StaffDto> UpdateAsync(string id, StaffUpdateDto dto, CancellationToken ct = default)
     {
         var user = await _ctx.AppUsers
             .Include(u => u.Doctor).Include(u => u.Employee).Include(u => u.Contracts)
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Id == id, ct)
             ?? throw new KeyNotFoundException($"User {id} not found");
 
@@ -201,6 +180,7 @@ public class StaffService : IStaffService
         return Map(user);
     }
 
+    // ==================== ToggleActive ====================
     public async Task<bool> ToggleActiveAsync(string id, CancellationToken ct = default)
     {
         var user = await _ctx.AppUsers.FirstOrDefaultAsync(u => u.Id == id, ct)
@@ -210,12 +190,21 @@ public class StaffService : IStaffService
         return user.IsActive.Value;
     }
 
+    // ==================== Delete ====================
     public async Task DeleteAsync(string id, CancellationToken ct = default)
     {
-        var user = await _ctx.AppUsers.FirstOrDefaultAsync(u => u.Id == id, ct)
-            ?? throw new KeyNotFoundException();
-        await _ctx.SaveChangesAsync(ct);          // ابتدا حذف links و گرنه FK می‌شکند
-        await _userManager.DeleteAsync(user);     // Cascade بقیه را پاک می‌کند
+        var user = await _ctx.AppUsers
+            .Include(u => u.Contracts)
+            .FirstOrDefaultAsync(u => u.Id == id, ct)
+            ?? throw new KeyNotFoundException($"User {id} not found");
+
+        // ⭐ اگر قرارداد فعال یا غیرفسخ‌شده دارد، حذف نشود
+        var hasContracts = user.Contracts.Any(c => c.Status != "terminated");
+        if (hasContracts)
+            throw new InvalidOperationException(
+                "این کاربر دارای قرارداد است و قابل حذف نیست. ابتدا قراردادها را فسخ کنید یا کاربر را غیرفعال کنید.");
+
+        await _userManager.DeleteAsync(user);
     }
 
     public async Task<int> BulkDeleteAsync(IEnumerable<string> ids, CancellationToken ct = default)
@@ -224,20 +213,51 @@ public class StaffService : IStaffService
         foreach (var id in ids)
         {
             try { await DeleteAsync(id, ct); count++; }
-            catch { /* ignore individual failure */ }
+            catch { /* ignore individual */ }
         }
         return count;
     }
 
-    // ---------- Helpers ----------
-    private async Task<ApplicationUser> CreateUserBaseAsync(
+    // ==================== ResendCredentials ====================
+    public async Task<StaffDto> ResendCredentialsAsync(string id, CancellationToken ct = default)
+    {
+        var user = await _ctx.AppUsers
+            .Include(u => u.Doctor)
+            .Include(u => u.Employee)
+            .Include(u => u.Contracts)
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == id, ct)
+            ?? throw new KeyNotFoundException($"User {id} not found");
+
+        if (string.IsNullOrWhiteSpace(user.PhoneNumber))
+            throw new InvalidOperationException("شماره موبایل کاربر ثبت نشده است");
+
+        // پسورد بر اساس حرف نقش + ۴ رقم آخر موبایل
+        var roleKey = user.Doctor != null ? "doctor" : "employee";
+        var prefix = roleKey == "doctor" ? "d" : "e";
+        var digits = new string(user.PhoneNumber.Where(char.IsDigit).ToArray());
+        var last4 = digits.Length >= 4 ? digits.Substring(digits.Length - 4) : "0000";
+        var password = $"{prefix}{last4}";
+
+        var dto = Map(user);
+        dto.GeneratedUsername = user.UserName;
+        dto.GeneratedPassword = password;
+        await SendCredentialsSmsAsync(user, dto, ct);
+        return dto;
+    }
+
+    // ==================== Helpers ====================
+
+    private async Task<(ApplicationUser User, string Password)> CreateUserBaseAsync(
         string firstName, string lastName, string phone, string? nationalCode,
         DateTime? birthDate, bool gender, string? email, string? address,
-        string? password, CancellationToken ct)
+        string? passwordFromDto, string roleKey, CancellationToken ct)
     {
-        var userName = phone;
-        if (await _userManager.FindByNameAsync(userName) != null)
-            throw new InvalidOperationException($"Username '{userName}' already exists");
+        var (userName, generatedPassword) = await GenerateUsernameAndPasswordAsync(phone, roleKey, ct);
+
+        var effectivePassword = !string.IsNullOrWhiteSpace(passwordFromDto)
+            ? passwordFromDto
+            : generatedPassword;
 
         var user = new ApplicationUser
         {
@@ -256,12 +276,82 @@ public class StaffService : IStaffService
             PhoneNumberConfirmed = true
         };
 
-        var result = await _userManager.CreateAsync(user, password ?? DefaultPassword);
+        var result = await _userManager.CreateAsync(user, effectivePassword);
         if (!result.Succeeded)
             throw new InvalidOperationException(
                 "Create user failed: " + string.Join(" | ", result.Errors.Select(e => e.Description)));
 
-        return user;
+        return (user, effectivePassword);
+    }
+
+    /// <summary>
+    /// Username: prefix + شماره ترتیبی (مثلاً d1, e2)
+    /// Password: prefix + ۴ رقم آخر موبایل (مثلاً d6789)
+    /// </summary>
+    private async Task<(string Username, string Password)> GenerateUsernameAndPasswordAsync(
+        string phone, string roleKey, CancellationToken ct)
+    {
+        var prefix = roleKey switch
+        {
+            "doctor" => "d",
+            "admin" => "a",
+            _ => "e"
+        };
+
+        // پیدا کردن بزرگ‌ترین شماره موجود با این prefix
+        var existing = await _ctx.AppUsers
+            .Where(u => u.UserName != null && u.UserName.StartsWith(prefix))
+            .Select(u => u.UserName!)
+            .ToListAsync(ct);
+
+        int max = 0;
+        foreach (var name in existing)
+        {
+            var suffix = name.Substring(prefix.Length);
+            if (int.TryParse(suffix, out var n) && n > max)
+                max = n;
+        }
+
+        var username = $"{prefix}{max + 1}";
+
+        // ۴ رقم آخر موبایل
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        if (digits.Length < 4)
+            throw new InvalidOperationException("شماره موبایل حداقل باید ۴ رقم داشته باشد");
+
+        var last4 = digits.Substring(digits.Length - 4);
+        var password = $"{prefix}{last4}";
+
+        return (username, password);
+    }
+
+    private async Task SendCredentialsSmsAsync(ApplicationUser user, StaffDto dto, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(user.PhoneNumber))
+        {
+            dto.SmsSent = false;
+            dto.SmsError = "شماره موبایل ثبت نشده";
+            return;
+        }
+
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        var message =
+            $"{fullName} عزیز، به سامانه دنتال خوش آمدید.\n" +
+            $"نام کاربری: {dto.GeneratedUsername}\n" +
+            $"رمز عبور: {dto.GeneratedPassword}\n" +
+            $"لطفاً پس از ورود، رمز را تغییر دهید.";
+
+        try
+        {
+            var sent = await _sms.SendAsync(user.PhoneNumber, message, ct);
+            dto.SmsSent = sent;
+            dto.SmsError = sent ? null : "ارسال پیامک ناموفق بود";
+        }
+        catch (Exception ex)
+        {
+            dto.SmsSent = false;
+            dto.SmsError = ex.Message;
+        }
     }
 
     private static string ResolveRoleForPosition(string position) => position switch
@@ -291,21 +381,15 @@ public class StaffService : IStaffService
             if (u.BirthDate.Value.Date > todayDt.AddYears(-age.Value)) age--;
         }
 
-        // ⭐ نقش اصلی را از AspNetUserRoles بگیر (اولین نقش)
         var primaryRole = u.UserRoles.FirstOrDefault()?.Role;
 
         return new StaffDto
         {
             Id = u.Id,
             FullName = $"{u.FirstName} {u.LastName}".Trim(),
-
-            // role فنی (برای فیلتر doctor/staff)
             Role = u.Doctor != null ? "doctor" : "staff",
-
-            // نام و نام فارسی نقش از AspNetRoles
             RoleName = primaryRole?.Name,
             RoleFaName = primaryRole?.FaName,
-
             MedicalCode = u.Doctor?.MedicalCode,
             Specialty = u.Doctor?.Specialty,
             Position = u.Employee?.Position,
